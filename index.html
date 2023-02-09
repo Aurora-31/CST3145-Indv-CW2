@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Bookmark</title>
+  <!-- Required meta tags -->
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Script tag to link vue.js framework -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.10/dist/vue.js"></script>
+  <!-- Font Awesome link -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+  <!-- Bootstrap CSS link -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
+</head>
+
+<body>
+  <!-- Mounting the app -->
+  <div id="app">
+
+    <!-- Header tag to contain the navbar -->
+      <header>
+      <nav class="navbar fixed-top navbar-expand-sm navbar-light bg-light py-3" >
+        <div class="container-fluid">
+          <!-- Website Logo -->
+          <img
+            src="https://see.fontimg.com/api/renderfont4/ALWWx/eyJyIjoiZnMiLCJoIjo5OCwidyI6MTUwMCwiZnMiOjY1LCJmZ2MiOiIjMDAwMDAwIiwiYmdjIjoiI0ZGRkZGRiIsInQiOjF9/Qm9va21hcms/urubus-personal-use-bold.png"
+            alt="Title fonts" width="160">
+
+            <!-- Input for search. 
+              v-model derivative helps bind the value entered by the user. Each key pressed will trigger the search function -->
+          <input class="form-control ms-auto" style="width: 250px;" type="text" placeholder="Search" v-model="searchInput"
+            v-on:keyup="search">
+
+            <!-- Filter button to show Bootstrap modal with sort options -->
+            <!-- v-if derivative enables button only when the showLesson returns true -->
+          <button v-if="showLesson" class="btn btn-outline-dark btn-sm ms-auto" data-bs-toggle="modal" data-bs-target="#filterModal">
+            Filter
+          </button>
+
+          <!-- Disabled filter button if showLesson value returns false -->
+          <button v-else disabled class="btn btn-outline-dark btn-sm ms-auto">
+            Filter
+          </button>
+
+          <!-- Checkout button -->
+          <!-- Enables if the cart length is more than 0, i.e., when the user adds lessons to cart -->
+          <button class="btn btn-warning btn-sm ms-3" v-on:click="showCheckout" v-if="this.cart.length > 0">
+            <!-- 'cartItemCount' is used the same way as a data property. -->
+            {{ cartItemCount }}
+            <!-- add the cart icon -->
+            <span class="fa-solid fa-cart-shopping"></span> Checkout
+          </button>
+
+          <!-- Disabled checkout button if cart is empty -->
+          <button class="btn btn-warning btn-sm ms-3" disabled="disabled" v-else>
+            <span class="fa-solid fa-cart-shopping"></span> Checkout
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Modal created for filter options -->
+    <div id="filterModal" class="modal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Choose filter</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <!-- Modal body with sort options -->
+          <div class="modal-body">
+
+            <!-- Sort by options -->
+            <!-- v-model binds the value selected by user to filterOption -->
+            <p>Sort By:</p>
+            <div class="form-check">
+
+              <!-- v-bind:value binds the value of each radio button -->
+              <input v-model="filterOption" v-bind:value="'subject'" class="form-check-input" type="radio" name="filter" id="subject" checked>
+              <label class="form-check-label" for="subject">
+                Subject
+              </label>
+            </div>
+            <div class="form-check">
+              <input v-model="filterOption" v-bind:value="'location'" class="form-check-input" type="radio" name="filter" id="location">
+              <label class="form-check-label" for="location">
+                Location
+              </label>
+            </div>
+            <div class="form-check">
+              <input v-model="filterOption" v-bind:value="'price'" class="form-check-input" type="radio" name="filter" id="price">
+              <label class="form-check-label" for="price">
+                Price
+              </label>
+            </div>
+            <div class="form-check">
+              <input v-model="filterOption" v-bind:value="'spaces'" class="form-check-input" type="radio" name="filter" id="availability">
+              <label class="form-check-label" for="availability">
+                Availability
+              </label>
+            </div>
+            <div class="form-check">
+              <input v-model="filterOption" v-bind:value="'rating'" class="form-check-input" type="radio" name="filter" id="rating">
+              <label class="form-check-label" for="rating">
+                Rating
+              </label>
+            </div>
+            <hr>
+
+            <!-- Order by options -->
+            <p>Order by:</p>
+            <div class="form-check">
+              <input v-model="sortOption" v-bind:value="'ascending'" class="form-check-input" type="radio" name="sort" id="ascending" checked>
+              <label class="form-check-label" for="ascending">
+                Ascending
+              </label>
+            </div>
+            <div class="form-check">
+              <input v-model="sortOption" v-bind:value="'descending'" class="form-check-input" type="radio" name="sort" id="descending">
+              <label class="form-check-label" for="descending">
+                Descending
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- main tag contains all necessary display divs -->
+    <main class="container">
+      <h1 class="display-5" v-text="sitename" style="text-align: center; font-weight: 400;"></h1>
+
+      <!-- Div to display search results -->
+      <!-- v-if uses the return value of checkSearchBar to show or hide div -->
+      <div v-if="checkSearchBar">
+        <h2 class="display-7 mt-3">Search Results</h2>
+        <div class="row">
+
+          <!-- v-for is used to loop through the searchResults. Each object is treated like a lesson -->
+          <div class="col-12 col-md-6 col-lg-4" v-for="lesson in searchResults">
+            <div class="card m-4">
+
+                <!-- binds src attribute to the image in the lesson object -->
+                <img class="card-img-top" v-bind:src="lesson.image" alt="Lesson image"/>
+              <div class="card-body">
+
+                <!-- Moustache syntax to display subject -->
+                <h4 class="card-title" style="text-align:center;">{{ lesson.subject }}</h4>
+
+                <!-- Moustache syntax to display location -->
+                <p class="card-text" style="margin-top: 10px;"> <span><i class="fa-solid fa-location-dot"></i></span>
+                    Location: {{ lesson.location }}</p>
+                <p class="card-text">
+                  <span>
+                    <i class="fa-solid fa-money-bill"></i></i>
+
+                    <!-- Moustache syntax to display price -->
+                  </span>
+                    Price: {{ lesson.price }}
+                </p>
+
+                <!-- Moustache syntax to display spaces -->
+                <!-- Depending on the v-if and v-else-if condition, the icon will change to indicate space left -->
+                <p class="card-text">
+                  <span  v-if='lesson.spaces     === cartCount(lesson.id)'>
+                    <i style="color:red ;" class="fa-solid fa-xmark"></i>
+                  </span>
+                  <span v-else-if="lesson.spaces    - cartCount(lesson.id) < 2">
+                    <i style="color:yellow ;"  class="fa-solid fa-exclamation"></i>
+                  </span>
+                  <span v-else>
+                    <i style="color:green ;" class="fa-solid fa-check"></i>
+                  </span>
+                    Spaces Left: {{ lesson.spaces }}
+                </p>
+                
+                <!-- Displaying rating -->
+                <div style="text-align: center;">
+                  <div style="text-align: right;margin-bottom: 15px;">
+                    <!-- Looping through the stars depending on the rating given to each lesson -->
+                    <span v-for="n in lesson.rating"><i style="color: #fcc404 ;" class="fa-solid fa-star"></i></span>
+                    <span v-for="n in 5-lesson.rating"><i class="fa-regular fa-star"></i></i></i></span>
+                  </div>
+
+                  <!-- Add to cart button -->
+                  <!-- Enables depending on the value returned by canAddToCart(lesson) function. Passing lesson object helps identify each lesson -->
+                  <!-- Clickinh addToCart(lesson) will push lesson object to cart array -->
+                  <button class="btn btn-warning" v-on:click="addToCart(lesson)" v-if="canAddToCart(lesson)">
+                    Add to cart
+                  </button>
+
+                  <!-- This button will be displayed otherwise -->
+                  <button class="btn btn-warning" disabled="disabled" v-else>Add to cart</button>
+                </div>
+              </div>
+            </div> 
+          </div>
+        </div>
+      </div>
+      <div v-else>
+
+        <!-- Display lessons div if showLesson returns true -->
+        <div v-if="showLesson">
+          <div class="row">
+            <h1 class="display-5 mt-3" style="text-align: center; font-weight: 400;">After School Lessons</h1>
+
+            <!-- Loop through the sortedLessons array -->
+          <div class="col-12 col-md-6 col-lg-4" v-for="lesson in sortedLessons">
+            <div class="card m-4">
+                <img class="card-img-top" v-bind:src="lesson.image" alt="Lesson image"/>
+              <div class="card-body">
+                <h4 class="card-title" style="text-align:center;">{{ lesson.subject }}</h4>
+                <p class="card-text" style="margin-top: 10px;"> <span><i class="fa-solid fa-location-dot"></i></span>
+                    Location: {{ lesson.location }}</p>
+                <p class="card-text">
+                  <span>
+                    <i class="fa-solid fa-money-bill"></i></i>
+                  </span>
+                    Price: {{ lesson.price }}
+                </p>
+                <p class="card-text">
+                  <span  v-if='lesson.spaces     === cartCount(lesson.id)'>
+                    <i style="color:red ;" class="fa-solid fa-xmark"></i>
+                  </span>
+                  <span v-else-if="lesson.spaces    - cartCount(lesson.id) < 2">
+                    <i style="color:yellow ;"  class="fa-solid fa-exclamation"></i>
+                  </span>
+                  <span v-else>
+                    <i style="color:green ;" class="fa-solid fa-check"></i>
+                  </span>
+                    Spaces Left: {{ lesson.spaces }}
+                </p>
+                <div style="text-align: center;">
+                  <div style="text-align: right;margin-bottom: 15px;">
+                    <span v-for="n in lesson.rating"><i style="color: #fcc404 ;" class="fa-solid fa-star"></i></span>
+                    <span v-for="n in 5-lesson.rating"><i class="fa-regular fa-star"></i></i></i></span>
+                  </div>
+                  <button class="btn btn-warning" v-on:click="addToCart(lesson)" v-if="canAddToCart(lesson)">
+                    Add to cart
+                  </button>
+                  <button class="btn btn-warning" disabled="disabled" v-else>Add to cart</button>
+                </div>
+              </div>
+            </div> 
+          </div>
+        </div>
+        </div>
+
+        <!-- Else display checkout page -->
+        <div v-else>
+          <h2 class="display-5 mt-3" style="text-align: center; font-weight: 400;">Checkout Page</h2>
+          <div class="row">
+
+            <!-- Loop through lesson objects sorted in cart -->
+            <div class="col-12 col-md-6 col-lg-4" v-for="lesson in cart">
+              <div class="card m-4">
+                  <img class="card-img-top" v-bind:src="lesson.image" alt="Lesson image"/>
+                <div class="card-body">
+                  <h4 class="card-title" style="text-align:center;">{{ lesson.subject }}</h4>
+                  <p class="card-text" style="margin-top: 10px;"> <span><i class="fa-solid fa-location-dot"></i></span>
+                      Location: {{ lesson.location }}</p>
+                  <p class="card-text">
+                    <span>
+                      <i class="fa-solid fa-money-bill"></i></i>
+                    </span>
+                      Price: {{ lesson.price }}
+                  </p>
+                  <div style="text-align: center;">
+
+                    <!-- Remove button -->
+                    <!-- Triggers remove(lesson.id) function -->
+                    <button class="btn btn-danger" v-on:click="remove(lesson.id)">
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div> 
+            </div>
+          </div>
+
+          <!-- Checkout details -->
+          <p class="display-6" style="text-align: center; font-weight: 200;">Checkout Details</p>
+          <div style="text-align: center; margin: 2%">
+            <p style="display: inline;">
+              <strong>Name:</strong>
+
+              <!-- This input field is bound to 'name'. Trim is used to remove any extra apces -->
+              <input v-model.trim="name" />
+            </p>
+            <p style="display: inline; margin: 2%;">
+              <strong>Phone number:</strong>
+
+              <!-- v-model binds value -->
+              <input v-model="phone" type="number" />
+            </p>
+          </div>
+          <div style="text-align: center; margin-bottom: 2%;">
+
+            <!-- Enable button if the condition satisfies -->
+            <!-- RegEx is used to check if only letter are entered for name, only numbers are inputted for phone, and its length is equal to 10 -->
+            <button v-if="/^(?!\s*$)[a-zA-Z.+\s'-]+$/.test(this.name) && /^(?!\s*$)[0-9.+\s'-]+$/.test(this.phone) && this.phone.length === 10" v-on:click="place_order" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#orderModal">
+              Checkout
+            </button>
+
+            <!-- Otherwise show disabled button -->
+            <button disabled="disabled" v-else class="btn btn-outline-dark">
+              Checkout
+            </button>
+          </div>
+
+          <!-- Modal created to display order submitted message -->
+          <div id="orderModal" class="modal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Order Submitted</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <p>Thank you for placing the order.</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Okay</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="d-flex justify-content-center align-items-center py-3 border-top bg-light">
+      <div class="text-center">
+        <span class="text-muted">Khadija Nadeem Shaikh</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Creating the app -->
+  <script type="text/javascript">
+    var webstore = new Vue({
+      el: "#app",
+      data: {
+        sitename: "After School Lessons",
+        lessons: [],
+        cart: [], 
+        showLesson: true,
+        checkSearchBar: false,
+        searchInput: "",
+        searchResults: [],
+        name: "",
+        phone: "",
+        filterOption: "subject",
+        sortOption: "ascending",
+      },
+      methods: {
+        place_order(){
+          let orderedLessons = [
+            ...new Map(this.cart.map((item) => [item["_id"], item])).values(),
+          ];
+
+          let new_arr = [];
+
+          orderedLessons.forEach((item) => {
+            let test_obj = {
+              id: item._id,
+              spaces: 20 - item.spaces
+            }
+
+            new_arr.push(test_obj);
+          })
+
+          let order_object = {
+            name: this.name,
+            phone: this.phone,
+            lessons: new_arr
+          }
+
+          fetch("http://localhost:3000/collection/order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(order_object)
+          })
+            .then(res => res.json())
+            .then(data => {
+              // do something with the response data from the PUT request
+              console.log({ "Success": data });
+            });
+
+            new_arr.forEach((lesson) => {
+              fetch("http://localhost:3000/collection/lesson/" + lesson["id"], {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({spaces: 20 - lesson["spaces"]})
+            })
+              .then(res => res.json())
+              .then(data => {
+                // do something with the response data from the PUT request
+                console.log({ "Success": data });
+              });
+
+            })
+            
+        },
+        // search method to push lessons to searchResults array
+        search() {
+          // Emptying array with each trigger
+          this.searchResults = [];
+          // checkSearchBar value to true to show search div
+          this.checkSearchBar = true;
+          // if searchInput is empty then show lessons div
+          if (this.searchInput == "") {
+            this.checkSearchBar = false;
+            this.showLesson = true;
+          }
+
+          fetch('http://localhost:3000/lesson/' + this.searchInput.toLowerCase()).then(
+            function (response) {
+              response.json().then(
+                function (json) {
+                  webstore.searchResults = json;
+                  console.log(json);
+                }
+              );
+            }
+          );
+        },
+        // addToCart(lesson) method to add lesson to cart
+        addToCart(lesson) {
+          // Reduce space with each click
+          lesson.spaces--
+          // push lesson to cart
+          this.cart.push(lesson)
+        },
+        // showCheckout method to change value with each click
+        showCheckout() {
+          // if value is set to true then set to false else set to true
+          this.showLesson = this.showLesson ? false : true;
+          this.searchInput="";
+          this.checkSearchBar = false;
+        },
+        // removed(id) method to remove lesson
+        remove(id){   
+          let index;
+          // Loop through cart length
+          for (let i = 0; i < this.cart.length; i++) {
+            // if id matches the id in cart
+            if (this.cart[i]["id"] === id) {
+              // set index to the index of the matched value
+              index = i;
+            }
+          }
+          // Splice the first instance of the index
+          this.cart.splice(index, 1);
+
+          // Loop through lessons array
+          for(let i=0;i<this.lessons.length;i++){
+            // if id matches the lesson id
+            if(this.lessons[i]["id"] === id){
+              // Add a space to that lesson's space attribure
+              this.lessons[i].spaces = this.lessons[i].spaces+1
+            }
+          }
+
+          // if cart length is 0
+          if(this.cart.length === 0){
+            // set showLesson to true, this will display lesson div if all items are removed
+            this.showLesson = true
+          }
+        },
+        // canAddToCart(lesson) checks if lesson can be added
+        canAddToCart(lesson) {
+          // if spaces is greater than the count of lesson id
+          return lesson.spaces > this.cartCount(lesson.id);
+        },
+        // returns count of cart items
+        cartCount(id) {
+          let count = 0;
+          // loop thourgh cart length
+          for (let i = 0; i < this.cart.length; i++) {
+            // checks the id in cart
+            if (this.cart[i] === id) {
+              // increase count
+              count++;
+            }
+          } return count;
+        },
+       
+      },
+      computed: {
+        // cartItemCount returns length of cart
+        cartItemCount: function () {
+          return this.cart.length || "";
+        },
+        // sortedLessons method creates array of sorted lessosn
+        sortedLessons() {
+          // Created a copy of the lessons array
+          let lessonsArr = this.lessons.slice(0);
+
+              // if the filterOption is equal to price
+              if(this.filterOption === 'price'){
+                // If sort is selected to ascending
+                if(this.sortOption === 'ascending'){
+                  // return array using sort function by checking prices against each other
+                  return lessonsArr.sort((a, b) => (a.price > b.price) ? 1 : -1)
+                }else{
+                  // Else return array with the opposite direction of compare
+                  return lessonsArr.sort((a, b) => (a.price < b.price) ? 1 : -1)
+                }
+               
+              }
+
+              if(this.filterOption === 'spaces'){
+                if(this.sortOption === 'ascending'){
+                  return lessonsArr.sort((a, b) => (a.spaces > b.spaces) ? 1 : -1)
+                }else{
+                  return lessonsArr.sort((a, b) => (a.spaces < b.spaces) ? 1 : -1)
+                }
+               
+              }
+
+              if(this.filterOption === 'subject'){
+                if(this.sortOption === 'ascending'){
+                  return lessonsArr.sort((a, b) => (a.subject > b.subject) ? 1 : -1)
+                }else{
+                  return lessonsArr.sort((a, b) => (a.subject < b.subject) ? 1 : -1)
+                }
+               
+              }
+
+              if(this.filterOption === 'location'){
+                if(this.sortOption === 'ascending'){
+                  return lessonsArr.sort((a, b) => (a.location > b.location) ? 1 : -1)
+                }else{
+                  return lessonsArr.sort((a, b) => (a.location < b.location) ? 1 : -1)
+                }
+               
+              }
+
+              if(this.filterOption === 'rating'){
+                if(this.sortOption === 'ascending'){
+                  return lessonsArr.sort((a, b) => (a.rating > b.rating) ? 1 : -1)
+                }else{
+                  return lessonsArr.sort((a, b) => (a.rating < b.rating) ? 1 : -1)
+                }
+               
+              }
+        },
+      },
+      created: function () {
+        console.log("Requesting data from server...");
+
+        // sending a get request to the 'collection/lesson' route
+        fetch("http://localhost:3000/collection/lesson").then((res) => {
+          // parsing the response text (lesson) as JSON
+          res.json().then((json) => {
+            // storing the parsed lesson in the lesson array
+            webstore.lessons = json;
+            console.log(json);
+          });
+        });
+      }
+     
+    });
+
+  </script>
+  <!-- Link to Bootstrap library -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+    integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+    integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+    crossorigin="anonymous"></script>
+</body>
+</html>
