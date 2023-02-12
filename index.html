@@ -408,7 +408,7 @@
               fetch("http://localhost:3000/collection/lesson/" + lesson["id"], {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({spaces: new_arr.spaces_left})
+              body: JSON.stringify({spaces: lesson['spaces_left']})
             })
               .then(res => res.json())
               .then(data => {
