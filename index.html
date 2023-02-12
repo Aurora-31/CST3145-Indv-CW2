@@ -352,6 +352,7 @@
       data: {
         sitename: "After School Lessons",
         lessons: [],
+        initial_details: [],
         cart: [], 
         showLesson: true,
         checkSearchBar: false,
@@ -370,19 +371,26 @@
 
           let new_arr = [];
 
+          
           orderedLessons.forEach((item) => {
-            let test_obj = {
+            let test_obj = {};
+            webstore.initial_details.forEach((old_item) => {
+              if(item._id === old_item._id){
+              test_obj = {
               id: item._id,
-              spaces: 20 - item.spaces
+              spaces: old_item.spaces - item.spaces,
+              spaces_left: old_item.spaces - (old_item.spaces - item.spaces)
             }
-
+              }
+            })
             new_arr.push(test_obj);
           })
 
           let order_object = {
             name: this.name,
             phone: this.phone,
-            lessons: new_arr
+            lessons: new_arr,
+            order_quantity: this.cartItemCount
           }
 
           fetch("http://localhost:3000/collection/order", {
@@ -400,7 +408,7 @@
               fetch("http://localhost:3000/collection/lesson/" + lesson["id"], {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({spaces: 20 - lesson["spaces"]})
+              body: JSON.stringify({spaces: new_arr.spaces_left})
             })
               .then(res => res.json())
               .then(data => {
@@ -565,6 +573,16 @@
           res.json().then((json) => {
             // storing the parsed lesson in the lesson array
             webstore.lessons = json;
+            console.log(json);
+          });
+        });
+        
+        // sending a get request to the 'collection/lesson' route
+        fetch("http://localhost:3000/collection/lesson").then((res) => {
+          // parsing the response text (lesson) as JSON
+          res.json().then((json) => {
+            // storing the parsed lesson in the lesson array
+            webstore.initial_details = json;
             console.log(json);
           });
         });
