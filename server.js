@@ -25,6 +25,7 @@ MongoClient.connect('mongodb+srv://Khadija:Middle%402020@cluster0.pak3b2v.mongod
     db = client.db('after_school_activities')
 })
 
+// Creating a logger middleware to log all request made to server
 app.use(function(req, res, next){
     console.log("Request IP: "+ req.url);
     console.log("Request date: "+ new Date());
@@ -42,6 +43,7 @@ app.param('collectionName', (req, res, next, collectionName) => {
     return next()
 })
 
+// get the results from collectionName
 app.get('/collection/:collectionName', (req, res, next) => {
     req.collection.find({}).toArray((e, results) => {
         if (e) return next(e)
@@ -49,15 +51,16 @@ app.get('/collection/:collectionName', (req, res, next) => {
     })
 })
 
+// Insert one collection in the collectionName through post route
 app.post('/collection/:collectionName', (req,res,next) => {
     req.collection.insertOne(req.body, (e, results) => {
         // if any errors
         if (e) return next(e) 
-        //return unique id along with results ops(object identifier)
         res.send(results)
     })
 })
 
+// Get particular collection based on the id of the collection
 const ObjectID = require('mongodb').ObjectId;
 app.get('/collection/:collectionName/:id', (req, res, next) => {
     req.collection.findOne({_id: new ObjectID(req.params.id)}, (e, result) => {
@@ -66,11 +69,12 @@ app.get('/collection/:collectionName/:id', (req, res, next) => {
     })
 })
 
+// update for specific id in a collection using put route
 app.put('/collection/:collectionName/:id', (req, res, next) => {
     req.collection.updateOne(
         //update for id
         {_id: new ObjectID(req.params.id)},
-        // it happens in the body 
+        // set the change to the body of the request
         {$set: req.body}, 
         // will only enable one update and therefore multi is set to false 
         {safe: true, multi: false},
@@ -81,12 +85,13 @@ app.put('/collection/:collectionName/:id', (req, res, next) => {
         })
 })
 
-// get a specific item from a collection (lessons)
+// get a specific lessons based on the search input
 app.get('/lesson/:search', (req, res, next) => {
     db.collection('lesson').find({}).toArray((e, results) => {
         if (e) return next(e);
         let searchResults = results.filter((item) => {
             return (
+                // return the objects that match the passed parameter in either location or subject name
                 item.subject.toLowerCase().match(req.params.search.toLowerCase()) || item.location.toLowerCase().match(req.params.search.toLowerCase())
             );
         });
@@ -94,6 +99,7 @@ app.get('/lesson/:search', (req, res, next) => {
     });
 })
 
+// Middleware to return static files of lesson images or the appropriate error message
 app.use(function(req, res, next){
     var filePath = path.join(__dirname, "static", req.url);
     fs.stat(filePath, function(err, fileInfo){
