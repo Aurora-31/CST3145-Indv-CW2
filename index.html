@@ -389,8 +389,8 @@
           let order_object = {
             name: this.name,
             phone: this.phone,
-            lessons: new_arr,
-            order_quantity: this.cartItemCount
+            order_quantity: this.cartItemCount,
+            lessons: new_arr
           }
 
           fetch("http://localhost:3000/collection/order", {
