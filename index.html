@@ -328,6 +328,7 @@
                   <p>Thank you for placing the order.</p>
                 </div>
                 <div class="modal-footer">
+                  <!-- On click of the okay button in the modal, trigger the after_order function -->
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" v-on:click="after_order">Okay</button>
                 </div>
               </div>
@@ -364,18 +365,25 @@
         sortOption: "ascending",
       },
       methods: {
+        // place_order method to push orders into order collection and update lesson spaces in lesson collection
         place_order(){
+          // creating an orderedLesson array from Map() function to replicate the array for each item for the cart without changing the original array 
           let orderedLessons = [
             ...new Map(this.cart.map((item) => [item["_id"], item])).values(),
           ];
 
+          // Creating a new array to store the unique lesson ids
           let new_arr = [];
 
-          
+          // Looping through the orderedLessons
           orderedLessons.forEach((item) => {
+            // Creating an object to store the ordered lesson details
             let test_obj = {};
+            // Looping through the initial values in from the database
             webstore.initial_details.forEach((old_item) => {
+              // if the current values from vue matches the initial value from database
               if(item._id === old_item._id){
+                // Add the id, spaces ordered, and spaces left in the object.
               test_obj = {
               id: item._id,
               spaces: old_item.spaces - item.spaces,
@@ -383,9 +391,11 @@
             }
               }
             })
+            // Push the object in the array
             new_arr.push(test_obj);
           })
 
+          // Creating an order object with the name, phone, order quantity and ordered lessons 
           let order_object = {
             name: this.name,
             phone: this.phone,
@@ -393,6 +403,7 @@
             lessons: new_arr
           }
 
+          // Fetch request to post the order_object in order collection
           fetch("http://localhost:3000/collection/order", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -400,10 +411,10 @@
           })
             .then(res => res.json())
             .then(data => {
-              // do something with the response data from the PUT request
               console.log({ "Success": data });
             });
 
+            // Looping through the ordered lesson array(new_arr) and then updating each lesson spaces with the available space through fetch
             new_arr.forEach((lesson) => {
               fetch("http://localhost:3000/collection/lesson/" + lesson["id"], {
               method: "PUT",
@@ -412,13 +423,12 @@
             })
               .then(res => res.json())
               .then(data => {
-                // do something with the response data from the PUT request
                 console.log({ "Success": data });
               });
 
             })
-            
         },
+        // after_order method to perform location reload after order is placed
         after_order(){
           location.reload();
         },
@@ -434,10 +444,12 @@
             this.showLesson = true;
           }
 
+          // fetch request to get search results by appending the search input in lower case
           fetch('http://localhost:3000/lesson/' + this.searchInput.toLowerCase()).then(
             function (response) {
               response.json().then(
                 function (json) {
+                  // storing results in searchResults array
                   webstore.searchResults = json;
                   console.log(json);
                 }
@@ -567,24 +579,24 @@
               }
         },
       },
+      // created function to get lesson when the page loads
       created: function () {
         console.log("Requesting data from server...");
 
-        // sending a get request to the 'collection/lesson' route
+        // sending a get request to the get all lessons
         fetch("http://localhost:3000/collection/lesson").then((res) => {
-          // parsing the response text (lesson) as JSON
           res.json().then((json) => {
-            // storing the parsed lesson in the lesson array
+            // storing the results in lessons array
             webstore.lessons = json;
             console.log(json);
           });
         });
         
-        // sending a get request to the 'collection/lesson' route
+        // Sending a get request again to create a duplicate array that store initial details from the database
         fetch("http://localhost:3000/collection/lesson").then((res) => {
-          // parsing the response text (lesson) as JSON
           res.json().then((json) => {
-            // storing the parsed lesson in the lesson array
+            // storing the results in intial_details array
+            // This will later be used to compare the spaces as the orginal lessons array get manipulated through user actions
             webstore.initial_details = json;
             console.log(json);
           });
