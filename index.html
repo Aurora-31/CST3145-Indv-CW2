@@ -328,7 +328,7 @@
                   <p>Thank you for placing the order.</p>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Okay</button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" v-on:click="after_order">Okay</button>
                 </div>
               </div>
             </div>
@@ -417,7 +417,21 @@
               });
 
             })
+
+            // webstore.showLesson = true;
+
+          //   this.cart = [];
+          //      // if cart length is 0
+          // if(this.cart.length === 0){
+          //   // set showLesson to true, this will display lesson div if all items are removed
+          //   this.showLesson = true
+          // }
+
+          // location.reload();
             
+        },
+        after_order(){
+          location.reload();
         },
         // search method to push lessons to searchResults array
         search() {
