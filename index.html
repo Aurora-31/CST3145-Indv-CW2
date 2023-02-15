@@ -386,6 +386,7 @@
                 // Add the id, spaces ordered, and spaces left in the object.
               test_obj = {
               id: item._id,
+              lesson_name: item.subject,
               spaces: old_item.spaces - item.spaces,
               spaces_left: old_item.spaces - (old_item.spaces - item.spaces)
             }
